@@ -1,6 +1,6 @@
 import Taro from '@tarojs/taro';
 import { View, Image, Text } from '@tarojs/components';
-import * as styles from './index.style.ts';
+import * as styles from './index.module.scss';
 
 const mockProps = {
   failImg:

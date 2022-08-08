@@ -47,7 +47,7 @@ function transformPropValue(propName, propValue, type) {
 const shouldIgnoreOnReactNativeProp = [
   "boxSizing",
   "whiteSpace",
-  "textOverflow"
+  "textOverflow",
 ];
 
 const shouldRemoveStyleProp = ["lines"];
@@ -68,7 +68,7 @@ const shouldTransformPXStyleProp = [
   "marginRight",
   "marginTop",
   "marginBottom",
-  "fontSize"
+  "fontSize",
 ];
 
 /**
@@ -105,6 +105,7 @@ function transformStyle(styles) {
 }
 
 module.exports = function(schema, option) {
+  const { _ } = option;
   const renderData = {};
   const style = {};
 
@@ -130,7 +131,7 @@ module.exports = function(schema, option) {
 
     if (Array.isArray(json)) {
       json.forEach(function(node) {
-        const res = transform(node)
+        const res = transform(node);
         result += res.result;
         Object.assign(comProps, res.props);
       });
@@ -166,15 +167,15 @@ module.exports = function(schema, option) {
       if (className) {
         style[className] = {
           ...json.props.style,
-          type
+          type,
         };
       }
     }
 
-    return {result, props: comProps};
+    return { result, props: comProps };
   }
 
-  const {result, props} = transform(schema)
+  const { result, props } = transform(schema);
   // transform json
   var jsx = `${result}`;
 
@@ -194,24 +195,46 @@ module.exports = function(schema, option) {
   const tsx = `
   import Taro from '@tarojs/taro';
   import { View, Image, Text } from '@tarojs/components';
-  import * as styles from './index.style';
+  import * as styles from './index.module.scss';
 
   ${renderData.modClass}
 
   export default Mod;
 `;
 
-  const styleText = `
-import transfromPX from '@utils/transfromPX';
-import React from 'react';
+  const generateLess = (schema) => {
+    let strLess = "";
 
-${renderData.style}
-`;
+    function walk(json) {
+      if (json.props.className) {
+        let className = json.props.className;
+
+        strLess += `.${className} {`;
+
+        for (let key in style[className]) {
+          // console.log(style[className])
+          strLess += `${_.kebabCase(key)}: ${style[className][key]};\n`;
+        }
+      }
+
+      if (json.children && json.children.length > 0) {
+        json.children.forEach((child) => walk(child));
+      }
+
+      if (json.props.className) {
+        strLess += "}";
+      }
+    }
+
+    walk(schema);
+
+    return strLess;
+  };
 
   const prettierOpt = {
     parser: "babel",
     printWidth: 80,
-    singleQuote: true
+    singleQuote: true,
   };
 
   return {
@@ -219,15 +242,27 @@ ${renderData.style}
       {
         panelName: "index.tsx",
         panelValue: option.prettier.format(tsx, prettierOpt),
-        panelType: "tsx"
+        panelType: "tsx",
       },
       {
-        panelName: "index.style.ts",
-        panelValue: option.prettier.format(styleText, prettierOpt),
-        panelType: "ts"
-      }
+        panelName: `index.module.scss`,
+        panelValue: option.prettier.format(generateLess(schema), {
+          parser: "scss",
+        }),
+        panelType: "scss",
+      },
+      {
+        panelName: `index.config.ts`,
+        panelValue: option.prettier.format(
+          `export default {
+          navigationBarTitleText: '',
+        }`,
+          prettierOpt
+        ),
+        panelType: "ts",
+      },
     ],
     noTemplate: true,
-    prettierOpt: prettierOpt
+    prettierOpt: prettierOpt,
   };
 };
