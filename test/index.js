@@ -10,7 +10,7 @@ const data = require("./imgData");
 
 const vm = new NodeVM({
   console: "inherit",
-  sandbox: {}
+  sandbox: {},
 });
 
 co(function*() {
@@ -21,12 +21,12 @@ co(function*() {
   );
   const renderInfo = vm.run(code)(data, {
     prettier: prettier,
-    _: _
+    _: _,
   });
 
   const { noTemplate, panelDisplay } = renderInfo;
   const prettierOpt = renderInfo.prettierOpt || {
-    printWidth: 120
+    printWidth: 120,
   };
 
   if (!noTemplate) {
@@ -43,7 +43,10 @@ co(function*() {
   } else {
     panelDisplay.forEach(function({ panelName, panelValue, panelType }) {
       // const prettierRes = prettier.format(panelValue, prettierOpt);
-      fs.writeFileSync(path.join(__dirname, "./res/" + panelName), panelValue);
+      fs.writeFileSync(
+        path.join(__dirname, "../code/" + panelName),
+        panelValue
+      );
     });
   }
 });
